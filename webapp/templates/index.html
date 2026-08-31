@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Health Risk Predictor</title>
+<style>
+  :root {
+    --ink: #1f2a24;
+    --paper: #f6f5f0;
+    --line: #d8d6cc;
+    --accent: #3d6b52;
+    --accent-soft: #e7efe9;
+    --risk: #b5482b;
+    --fit: #3d6b52;
+    --unhealthy: #b5482b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Georgia", "Iowan Old Style", serif;
+    background: var(--paper);
+    color: var(--ink);
+    display: flex;
+    justify-content: center;
+    padding: 48px 20px 80px;
+  }
+  .wrap { width: 100%; max-width: 760px; }
+  .eyebrow {
+    font-family: "Courier New", monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  h1 {
+    font-size: 34px;
+    margin: 0 0 8px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .sub {
+    font-size: 15px;
+    color: #5a5f56;
+    margin-bottom: 36px;
+    max-width: 54ch;
+    line-height: 1.5;
+  }
+  form {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 32px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px 24px;
+  }
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+  label {
+    display: block;
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #6b7166;
+    margin-bottom: 6px;
+  }
+  input, select {
+    width: 100%;
+    padding: 10px 12px;
+    font-family: "Georgia", serif;
+    font-size: 15px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  input:focus, select:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  .field { margin-bottom: 4px; }
+  button {
+    margin-top: 28px;
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    font-family: "Courier New", monospace;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  button:hover { background: #2f5641; }
+
+  .result {
+    margin-top: 28px;
+    padding: 24px 28px;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+    background: var(--accent-soft);
+  }
+  .result.fit { background: #e7efe9; border-color: #b9d3c2; }
+  .result.at-risk { background: #f6efe2; border-color: #e3cd9c; }
+  .result.unhealthy { background: #f7e6e0; border-color: #e3b6a6; }
+  .result-label {
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6b7166;
+  }
+  .result-value {
+    font-size: 28px;
+    font-weight: 600;
+    margin: 4px 0 14px;
+    text-transform: capitalize;
+  }
+  .bars { display: flex; flex-direction: column; gap: 8px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .bar-name { width: 90px; text-transform: capitalize; color: #4a4f45; }
+  .bar-track { flex: 1; height: 8px; background: #fff; border-radius: 4px; overflow: hidden; border: 1px solid var(--line); }
+  .bar-fill { height: 100%; background: var(--accent); }
+  .bar-pct { width: 48px; text-align: right; font-family: "Courier New", monospace; font-size: 12px; }
+  footer { margin-top: 40px; font-size: 12px; color: #8b9086; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Kaggle Playground S6E7</div>
+  <h1>Student Health Risk Predictor</h1>
+  <p class="sub">Enter a student's lifestyle and vital data below. The model — a Random Forest classifier trained on student records — predicts whether the profile is <strong>fit</strong>, <strong>at-risk</strong>, or <strong>unhealthy</strong>.</p>
+
+  <form action="/predict" method="post">
+    <div class="grid">
+      <div class="field">
+        <label for="sleep_duration">Sleep duration (hrs)</label>
+        <input type="number" step="0.01" name="sleep_duration" id="sleep_duration" placeholder="e.g. 6.99" required>
+      </div>
+      <div class="field">
+        <label for="heart_rate">Heart rate (bpm)</label>
+        <input type="number" step="0.1" name="heart_rate" id="heart_rate" placeholder="e.g. 75.1" required>
+      </div>
+      <div class="field">
+        <label for="bmi">BMI</label>
+        <input type="number" step="0.01" name="bmi" id="bmi" placeholder="e.g. 22.99" required>
+      </div>
+      <div class="field">
+        <label for="calorie_expenditure">Calorie expenditure</label>
+        <input type="number" step="1" name="calorie_expenditure" id="calorie_expenditure" placeholder="e.g. 2241" required>
+      </div>
+      <div class="field">
+        <label for="step_count">Step count</label>
+        <input type="number" step="1" name="step_count" id="step_count" placeholder="e.g. 8856" required>
+      </div>
+      <div class="field">
+        <label for="exercise_duration">Exercise duration (min)</label>
+        <input type="number" step="0.1" name="exercise_duration" id="exercise_duration" placeholder="e.g. 39.4" required>
+      </div>
+      <div class="field">
+        <label for="water_intake">Water intake (L)</label>
+        <input type="number" step="0.01" name="water_intake" id="water_intake" placeholder="e.g. 2.17" required>
+      </div>
+      <div class="field">
+        <label for="gender">Gender</label>
+        <select name="gender" id="gender">
+          {% for opt in categories['gender'] %}<option value="{{ opt }}">{{ opt }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="diet_type">Diet type</label>
+        <select name="diet_type" id="diet_type">
+          {% for opt in categories['diet_type'] %}<option value="{{ opt }}">{{ opt }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="stress_level">Stress level</label>
+        <select name="stress_level" id="stress_level">
+          {% for opt in categories['stress_level'] %}<option value="{{ opt }}">{{ opt }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="sleep_quality">Sleep quality</label>
+        <select name="sleep_quality" id="sleep_quality">
+          {% for opt in categories['sleep_quality'] %}<option value="{{ opt }}">{{ opt }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="physical_activity_level">Physical activity level</label>
+        <select name="physical_activity_level" id="physical_activity_level">
+          {% for opt in categories['physical_activity_level'] %}<option value="{{ opt }}">{{ opt }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="smoking_alcohol">Smoking / alcohol</label>
+        <select name="smoking_alcohol" id="smoking_alcohol">
+          {% for opt in categories['smoking_alcohol'] %}<option value="{{ opt }}">{{ opt }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <button type="submit">Predict Health Condition</button>
+  </form>
+
+  {% if prediction %}
+  <div class="result {{ prediction }}">
+    <div class="result-label">Predicted health condition</div>
+    <div class="result-value">{{ prediction }}</div>
+    <div class="bars">
+      {% for label, pct in probabilities.items() %}
+      <div class="bar-row">
+        <div class="bar-name">{{ label }}</div>
+        <div class="bar-track"><div class="bar-fill" data-pct="{{ pct }}"></div></div>
+        <div class="bar-pct">{{ pct }}%</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <footer>Random Forest &middot; scikit-learn &middot; Flask &middot; trained on Kaggle Playground Series S6E7</footer>
+</div>
+<script>
+  document.querySelectorAll('.bar-fill[data-pct]').forEach(function (el) {
+    el.style.width = el.getAttribute('data-pct') + '%';
+  });
+</script>
+</body>
+</html>
